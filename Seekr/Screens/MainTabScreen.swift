@@ -5,6 +5,7 @@
 //  Created by Sukritha K K on 15/07/25.
 //
 
+import FoundationModels
 import SwiftUI
 
 struct MainTabScreen: View {
@@ -39,15 +40,8 @@ struct MainTabScreen: View {
         }
         .sheet(isPresented: $showBottomSheet) {
             BottomSheetView(sheetDetent: $sheetDetent)
-                .presentationDetents([.height(0), .height(350), .large], selection: $sheetDetent)
+                .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
                 .presentationBackgroundInteraction(.enabled)
-                .presentationCornerRadius(isiOS26 ? nil : 30)
-                .presentationBackground {
-                    if !isiOS26 {
-                        Rectangle()
-                            .fill(.ultraThinMaterial)
-                    }
-                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .onGeometryChange(for: CGFloat.self) {
                     max(min($0.size.height, 400 + safeAreaBottomInset), 0)
@@ -87,57 +81,23 @@ struct BottomSheetView: View {
     /// Bottom Sheet Properties
     @State private var searchText: String = ""
     @FocusState var isFocused: Bool
+    @State var planner: ItineraryPlanner?
     var body: some View {
         ScrollView(.vertical) {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            HStack(spacing: 10) {
-                TextField("Search...", text: $searchText)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(.gray.opacity(0.25), in: .capsule)
-                    .focused($isFocused)
-
-                /// Profile/Close Button for Search Field
-                Button {
-                    if isFocused {
-                        isFocused = false
-                    } else {
-                        /// Profile Button Action
-                    }
-                } label: {
-                    ZStack {
-                        if isFocused {
-                            Group {
-                                if #available(iOS 26, *) {
-                                    Image(systemName: "xmark")
-                                        .frame(width: 48, height: 48)
-                                        .glassEffect(in: .circle)
-                                } else {
-                                    Image(systemName: "xmark")
-                                        .frame(width: 48, height: 48)
-                                        .background(.ultraThinMaterial, in: .circle)
-                                }
-                            }
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(Color.primary)
-                            .transition(.blurReplace)
-                        } else {
-                            Text("BV")
-                                .font(.title2.bold())
-                                .frame(width: 48, height: 48)
-                                .foregroundStyle(.white)
-                                .background(.gray, in: .circle)
-                                .transition(.blurReplace)
-                        }
-                    }
-                }
+            VStack {
+                NeuralSearchView()
+                TripPlanningView(landmark: ModelData.shared.featuredLandmark ?? ModelData.landmarks.first!)
+                Spacer()
             }
-            .padding(.horizontal, 18)
-            .frame(height: 80)
-            .padding(.top, 5)
         }
+
+        .task {
+            planner = ItineraryPlanner(landmark: ModelData.shared.featuredLandmark ?? ModelData.landmarks.first!)
+            planner?.prewarm()
+        }
+        .environment(planner)
         /// Animating Focus Changes
         .animation(.interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: 0), value: isFocused)
         /// Updating Sheet size when textfield is active
@@ -170,5 +130,92 @@ struct SearchBarView: View {
 //        .background(.ultraThinMaterial) // Optional: frosted look
 //        .clipShape(Capsule())
 //        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+    }
+}
+
+struct NeuralSearchView: View {
+    @State private var query: String = ""
+    @State private var requestedItinerary: Bool = false
+    @Environment(ItineraryPlanner.self) var planner: ItineraryPlanner?
+
+    var body: some View {
+        ZStack {
+            VStack(alignment: .leading, spacing: 16) {
+                ZStack(alignment: .topLeading) {
+                    if query.isEmpty {
+                        Text("Tell me what you're looking for…\n'Find a quiet café with outdoor seating and good WiFi near MG Road'")
+                            .foregroundColor(.white.opacity(0.4))
+                            .padding(.horizontal, 12)
+                            .padding(.top, 12)
+                    }
+
+                    TextEditor(text: $query)
+                        .padding(12)
+                        .foregroundColor(.white)
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(16)
+                        .frame(height: 100)
+                        .scrollContentBackground(.hidden)
+                }
+
+                HStack {
+                    HStack(spacing: 16) {
+                        GradientCircleButton(icon: "mic.fill")
+                        GradientCircleButton(icon: "camera.fill", plain: true)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        Task { @MainActor in
+                            try await requestItinerary()
+                        }
+                    }) {
+                        Label("Search", systemImage: "sparkles")
+                            .fontWeight(.semibold)
+                            .frame(width: 100, height: 44)
+                            .background(
+                                LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .padding()
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+    }
+
+    func requestItinerary() async throws {
+        requestedItinerary = true
+        do {
+            try await planner?.suggestItinerary()
+        } catch {
+            planner?.error = error
+        }
+    }
+}
+
+struct GradientCircleButton: View {
+    let icon: String
+    var plain: Bool = false
+
+    var body: some View {
+        ZStack {
+            if plain {
+                Circle()
+                    .fill(Color.white.opacity(0.1))
+            } else {
+                Circle()
+                    .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
+
+            Image(systemName: icon)
+                .foregroundColor(.white)
+                .font(.system(size: 18, weight: .semibold))
+        }
+        .frame(width: 44, height: 44)
     }
 }
