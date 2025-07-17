@@ -24,8 +24,8 @@ struct MainTabScreen: View {
 
                 Text("Saved/Favorites")
                     .tabItem { Label("Saved", systemImage: "bookmark") }
-               TravelProfileView()
-                .tabItem { Label("You", systemImage: "person.circle") }
+                TravelProfileView()
+                    .tabItem { Label("You", systemImage: "person.circle") }
             }
             .tabBarMinimizeBehavior(.onScrollDown)
             .tabViewBottomAccessory {
@@ -218,7 +218,6 @@ struct GradientCircleButton: View {
     }
 }
 
-
-extension LinearGradient{
-  static let bg = LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+extension LinearGradient {
+    static let bg = LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
 }
