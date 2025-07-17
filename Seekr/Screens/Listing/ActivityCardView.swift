@@ -60,8 +60,8 @@ struct ActivityCardView: View {
                             }
                         }
 
-                        if let location = activity.location, !location.isEmpty {
-                            Text(location)
+                        if let description = activity.description, !description.isEmpty {
+                            Text(description)
                                 .font(.subheadline)
                                 .foregroundStyle(Color.gray)
                                 .lineLimit(2)

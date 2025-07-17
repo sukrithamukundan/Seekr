@@ -87,10 +87,13 @@ struct ActivityDetailView: View {
 
                     HStack {
                         if let website = activity.website {
-                            Link(destination: URL(string: website)!) {
+                            NavigationLink {
+                                WebView(url: URL(string: website)!)
+                            } label: {
                                 Label("Website", systemImage: "safari")
                             }
                         }
+
                         if let phone = activity.phoneNumber {
                             Link(destination: URL(string: "tel:\(phone)")!) {
                                 Label("Call", systemImage: "phone.fill")

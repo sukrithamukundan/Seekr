@@ -17,6 +17,9 @@ struct MainTabScreen: View {
     @State private var animationDuration: CGFloat = 0
     @State private var toolbarOpacity: CGFloat = 1
     @State private var safeAreaBottomInset: CGFloat = 0
+
+    @State var planner: ItineraryPlanner?
+    @StateObject private var locationManager = LocationManager()
     var body: some View {
         ZStack {
             TabView {
@@ -36,18 +39,39 @@ struct MainTabScreen: View {
                         showBottomSheet = true
                     }
             }
+        }.task {
+            if let coordinate = locationManager.location?.coordinate {
+                await locationManager.getLocationName(from: coordinate)
+                if let landmark = locationManager.userLandmark {
+                    planner = ItineraryPlanner(landmark: landmark)
+                    planner?.prewarm()
+                    Task { @MainActor in
+                        try await requestItinerary()
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showBottomSheet) {
-            BottomSheetView(sheetDetent: $sheetDetent)
+            BottomSheetView(naturalLanguageQuery: $locationManager.naturalLanguageQuery, userLandmark: $locationManager.userLandmark)
                 .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
                 .presentationBackgroundInteraction(.enabled)
                 .ignoresSafeArea()
                 .interactiveDismissDisabled()
         }
+        .environment(planner)
+        .environmentObject(locationManager)
     }
 
     var maxAnimationDuration: CGFloat {
         return isiOS26 ? 0.25 : 0.18
+    }
+
+    func requestItinerary() async throws {
+        do {
+            try await planner?.suggestItinerary()
+        } catch {
+            planner?.error = error
+        }
     }
 }
 
@@ -56,11 +80,8 @@ struct MainTabScreen: View {
 }
 
 struct BottomSheetView: View {
-    @Binding var sheetDetent: PresentationDetent
-    /// Bottom Sheet Properties
-    @FocusState var isFocused: Bool
-    @State var planner: ItineraryPlanner?
-    @StateObject private var locationManager = LocationManager()
+    @Binding var naturalLanguageQuery: String
+    @Binding var userLandmark: Landmark?
     var body: some View {
         NavigationStack {
             ScrollView(.vertical) {
@@ -77,33 +98,6 @@ struct BottomSheetView: View {
                 }
             }
             .scrollDismissesKeyboard(.immediately)
-        }
-        .task {
-            if let coordinate = locationManager.location?.coordinate {
-                await locationManager.getLocationName(from: coordinate)
-                if let landmark = locationManager.userLandmark {
-                    planner = ItineraryPlanner(landmark: landmark)
-                    planner?.prewarm()
-                    Task { @MainActor in
-                        try await requestItinerary()
-                    }
-                }
-            }
-        }
-        .environment(planner)
-        /// Animating Focus Changes
-        .animation(.interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: 0), value: isFocused)
-        /// Updating Sheet size when textfield is active
-        .onChange(of: isFocused) { _, newValue in
-            sheetDetent = newValue ? .large : .height(350)
-        }
-    }
-
-    func requestItinerary() async throws {
-        do {
-            try await planner?.suggestItinerary()
-        } catch {
-            planner?.error = error
         }
     }
 }
@@ -129,9 +123,6 @@ struct SearchBarView: View {
         .foregroundStyle(Color.primary)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-//        .background(.ultraThinMaterial) // Optional: frosted look
-//        .clipShape(Capsule())
-//        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
 }
 
