@@ -65,7 +65,7 @@ struct ActivityDetailView: View {
                         }
                         Spacer()
                         if let rating = activity.rating {
-                            Label(String(format: "%.1f ★", rating), systemImage: "star.fill")
+                            Label(String(format: "%.1f", rating), systemImage: "star.fill")
                                 .foregroundColor(.yellow)
                         }
                     }

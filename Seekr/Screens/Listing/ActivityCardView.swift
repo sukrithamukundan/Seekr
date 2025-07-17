@@ -5,6 +5,7 @@
 //  Created by Sukritha K K on 17/07/25.
 //
 
+import Foundation
 import SwiftUI
 struct ActivityCardView: View {
     let activity: Activity.PartiallyGenerated
@@ -53,7 +54,7 @@ struct ActivityCardView: View {
                             }
 
                             if let reviews = activity.reviews {
-                                Text("(\(reviews))")
+                                Text("\(reviews.formatted(.number.notation(.compactName))) reviews")
                                     .font(.subheadline)
                                     .foregroundStyle(.gray)
                             }

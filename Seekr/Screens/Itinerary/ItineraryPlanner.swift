@@ -16,6 +16,7 @@ final class ItineraryPlanner {
     private(set) var pointOfInterestTool: FindPointsOfInterestTool
     private var session: LanguageModelSession
     private(set) var isLoading = false
+    private(set) var showLoading = false
 
     var error: Error?
     var landmark: Landmark
@@ -78,6 +79,7 @@ final class ItineraryPlanner {
     }
 
     func suggestItinerary() async throws {
+        showLoading = true
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
@@ -99,6 +101,7 @@ final class ItineraryPlanner {
         }
 
         for try await partialResponse in stream {
+            showLoading = false
             itinerary = partialResponse
         }
         print(itinerary)
@@ -123,7 +126,7 @@ extension FindPointsOfInterestTool {
 }
 
 extension Suggestions {
-    static  let sampleSuggestions = Suggestions(
+    static let sampleSuggestions = Suggestions(
         title: "Art & Aromas in Indiranagar",
         subtitle: "A relaxed afternoon of culture and caffeine",
         destination: "Indiranagar, Bangalore",
