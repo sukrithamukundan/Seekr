@@ -17,6 +17,9 @@ struct MainTabScreen: View {
     @State private var animationDuration: CGFloat = 0
     @State private var toolbarOpacity: CGFloat = 1
     @State private var safeAreaBottomInset: CGFloat = 0
+
+    @State var planner: ItineraryPlanner?
+    @StateObject private var locationManager = LocationManager()
     var body: some View {
         ZStack {
             TabView {
@@ -35,63 +38,7 @@ struct MainTabScreen: View {
                         showBottomSheet = true
                     }
             }
-        }
-        .sheet(isPresented: $showBottomSheet) {
-            BottomSheetView(sheetDetent: $sheetDetent)
-                .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
-                .presentationBackgroundInteraction(.enabled)
-                // .frame(maxWidth: .infinity, maxHeight: .infinity)
-//                .onGeometryChange(for: CGFloat.self) {
-//                    max(min($0.size.height, 400 + safeAreaBottomInset), 0)
-//                } action: { oldValue, newValue in
-//                    if sheetDetent == .height(0) {
-//                        showBottomSheet = false
-//                    }
-//
-//                    /// Limiting the offset to 300, so that opacity effect will be visible
-//                    sheetHeight = min(newValue, 350 + safeAreaBottomInset)
-//
-//                    /// Calulating Opacity
-//                    let progress = max(min((newValue - (350 + safeAreaBottomInset)) / 50, 1), 0)
-//                    toolbarOpacity = 1 - progress
-//
-//                    /// Calculating Animation Duration
-//                    let diff = abs(newValue - oldValue)
-//                    let duration = max(min(diff / 100, maxAnimationDuration), 0)
-//                    animationDuration = duration
-//                }
-                .ignoresSafeArea()
-                .interactiveDismissDisabled()
-        }
-    }
-
-    var maxAnimationDuration: CGFloat {
-        return isiOS26 ? 0.25 : 0.18
-    }
-}
-
-#Preview {
-    MainTabScreen()
-}
-
-struct BottomSheetView: View {
-    @Binding var sheetDetent: PresentationDetent
-    /// Bottom Sheet Properties
-    @FocusState var isFocused: Bool
-    @State var planner: ItineraryPlanner?
-    @StateObject private var locationManager = LocationManager()
-    var body: some View {
-        NavigationStack {
-            ScrollView(.vertical) {
-                VStack {
-                    NeuralSearchView(query: $locationManager.naturalLanguageQuery)
-                    if let landmark = locationManager.userLandmark {
-                        ListingScreen(landmark: landmark)
-                    }
-                }
-            }
-        }
-        .task {
+        }.task {
             if let coordinate = locationManager.location?.coordinate {
                 await locationManager.getLocationName(from: coordinate)
                 if let landmark = locationManager.userLandmark {
@@ -103,13 +50,19 @@ struct BottomSheetView: View {
                 }
             }
         }
-        .environment(planner)
-        /// Animating Focus Changes
-        .animation(.interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: 0), value: isFocused)
-        /// Updating Sheet size when textfield is active
-        .onChange(of: isFocused) { _, newValue in
-            sheetDetent = newValue ? .large : .height(350)
+        .sheet(isPresented: $showBottomSheet) {
+            BottomSheetView(naturalLanguageQuery: $locationManager.naturalLanguageQuery, userLandmark: $locationManager.userLandmark)
+                .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
+                .presentationBackgroundInteraction(.enabled)
+                .ignoresSafeArea()
+                .interactiveDismissDisabled()
         }
+        .environment(planner)
+        .environmentObject(locationManager)
+    }
+
+    var maxAnimationDuration: CGFloat {
+        return isiOS26 ? 0.25 : 0.18
     }
 
     func requestItinerary() async throws {
@@ -117,6 +70,27 @@ struct BottomSheetView: View {
             try await planner?.suggestItinerary()
         } catch {
             planner?.error = error
+        }
+    }
+}
+
+#Preview {
+    MainTabScreen()
+}
+
+struct BottomSheetView: View {
+    @Binding var naturalLanguageQuery: String
+    @Binding var userLandmark: Landmark?
+    var body: some View {
+        NavigationStack {
+            ScrollView(.vertical) {
+                VStack {
+                    NeuralSearchView(query: $naturalLanguageQuery)
+                    if let landmark = userLandmark {
+                        ListingScreen(landmark: landmark)
+                    }
+                }
+            }
         }
     }
 }
@@ -141,9 +115,6 @@ struct SearchBarView: View {
         .foregroundStyle(Color.primary)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-//        .background(.ultraThinMaterial) // Optional: frosted look
-//        .clipShape(Capsule())
-//        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
 }
 

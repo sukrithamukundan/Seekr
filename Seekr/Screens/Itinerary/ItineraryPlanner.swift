@@ -79,10 +79,10 @@ final class ItineraryPlanner {
     }
 
     func suggestItinerary() async throws {
-        showLoading = true
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
+        itinerary = nil
         let stream = session.streamResponse(
             generating: Suggestions.self,
             options: GenerationOptions(sampling: .greedy),

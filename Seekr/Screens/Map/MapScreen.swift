@@ -12,6 +12,7 @@ import SwiftUI
 /// Apple Park Coordinates
 extension MKCoordinateRegion {
     static let applePark = MKCoordinateRegion(center: .init(latitude: 37.3346, longitude: -122.0090), latitudinalMeters: 1000, longitudinalMeters: 1000)
+    static let bangalore = MKCoordinateRegion(center: .init(latitude: 12.9629, longitude: 77.5775), latitudinalMeters: 1000, longitudinalMeters: 1000)
 }
 
 struct MapScreen: View {

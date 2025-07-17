@@ -11,7 +11,7 @@ import SwiftUI
 struct LandingScreen: View {
     var body: some View {
         NavigationStack {
-            Map(initialPosition: .region(.applePark))
+            Map(initialPosition: .userLocation(fallback: .region(.bangalore)))
         }
     }
 }

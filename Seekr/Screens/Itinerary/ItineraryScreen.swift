@@ -10,8 +10,8 @@ import MapKit
 import SwiftUI
 
 struct ItineraryScreen: View {
-    @State var planner: ItineraryPlanner?
-    @StateObject private var locationManager = LocationManager()
+    @Environment(ItineraryPlanner.self) var planner: ItineraryPlanner?
+    @EnvironmentObject var locationManager: LocationManager
     var body: some View {
         NavigationStack {
             ScrollView(.vertical) {
@@ -22,21 +22,6 @@ struct ItineraryScreen: View {
                 }
             }
         }
-        .task {
-            if planner == nil {
-                if let coordinate = locationManager.location?.coordinate {
-                    await locationManager.getLocationName(from: coordinate)
-                    if let landmark = locationManager.userLandmark {
-                        planner = ItineraryPlanner(landmark: landmark)
-                        planner?.prewarm()
-                        Task { @MainActor in
-                            try await requestItinerary()
-                        }
-                    }
-                }
-            }
-        }
-        .environment(planner)
     }
 
     func requestItinerary() async throws {
