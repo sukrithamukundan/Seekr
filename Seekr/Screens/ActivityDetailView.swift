@@ -9,6 +9,7 @@ import CoreLocation
 import MapKit
 import SwiftUI
 import UIKit
+import WebKit
 
 struct ActivityDetailView: View {
     let activity: Activity.PartiallyGenerated
@@ -25,7 +26,6 @@ struct ActivityDetailView: View {
                             .frame(height: 280)
                             .clipped()
                             .cornerRadius(20)
-
                             .padding(.horizontal)
                     } placeholder: {
                         Color.gray.opacity(0.2)

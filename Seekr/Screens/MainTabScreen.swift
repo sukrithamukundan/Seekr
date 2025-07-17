@@ -86,13 +86,13 @@ struct BottomSheetView: View {
         NavigationStack {
             ScrollView(.vertical) {
                 VStack {
-                    NeuralSearchView(query: $locationManager.naturalLanguageQuery)
-                    if locationManager.naturalLanguageQuery.isEmpty {
+                    NeuralSearchView(query: $naturalLanguageQuery)
+                    if naturalLanguageQuery.isEmpty {
                         ScheduleAssistantCard()
                         HealthInsightsCard()
                     }
 
-                    if let landmark = locationManager.userLandmark {
+                    if let landmark = userLandmark {
                         ListingScreen(landmark: landmark)
                     }
                 }
