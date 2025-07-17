@@ -24,9 +24,7 @@ struct MainTabScreen: View {
 
                 Text("Saved/Favorites")
                     .tabItem { Label("Saved", systemImage: "bookmark") }
-                ScrollView {
-                    Text("Profile & Settings")
-                }
+               TravelProfileView()
                 .tabItem { Label("You", systemImage: "person.circle") }
             }
             .tabBarMinimizeBehavior(.onScrollDown)
@@ -43,25 +41,25 @@ struct MainTabScreen: View {
                 .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
                 .presentationBackgroundInteraction(.enabled)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onGeometryChange(for: CGFloat.self) {
-                    max(min($0.size.height, 400 + safeAreaBottomInset), 0)
-                } action: { oldValue, newValue in
-                    if sheetDetent == .height(0) {
-                        showBottomSheet = false
-                    }
-
-                    /// Limiting the offset to 300, so that opacity effect will be visible
-                    sheetHeight = min(newValue, 350 + safeAreaBottomInset)
-
-                    /// Calulating Opacity
-                    let progress = max(min((newValue - (350 + safeAreaBottomInset)) / 50, 1), 0)
-                    toolbarOpacity = 1 - progress
-
-                    /// Calculating Animation Duration
-                    let diff = abs(newValue - oldValue)
-                    let duration = max(min(diff / 100, maxAnimationDuration), 0)
-                    animationDuration = duration
-                }
+//                .onGeometryChange(for: CGFloat.self) {
+//                    max(min($0.size.height, 400 + safeAreaBottomInset), 0)
+//                } action: { oldValue, newValue in
+//                    if sheetDetent == .height(0) {
+//                        showBottomSheet = false
+//                    }
+//
+//                    /// Limiting the offset to 300, so that opacity effect will be visible
+//                    sheetHeight = min(newValue, 350 + safeAreaBottomInset)
+//
+//                    /// Calulating Opacity
+//                    let progress = max(min((newValue - (350 + safeAreaBottomInset)) / 50, 1), 0)
+//                    toolbarOpacity = 1 - progress
+//
+//                    /// Calculating Animation Duration
+//                    let diff = abs(newValue - oldValue)
+//                    let duration = max(min(diff / 100, maxAnimationDuration), 0)
+//                    animationDuration = duration
+//                }
                 .ignoresSafeArea()
                 .interactiveDismissDisabled()
         }
@@ -121,7 +119,7 @@ struct SearchBarView: View {
             } label: {
                 Image(systemName: "mic.fill")
                     .contentShape(.rect)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.accentColor)
             }
         }
         .foregroundStyle(Color.primary)
@@ -209,7 +207,7 @@ struct GradientCircleButton: View {
                     .fill(Color.white.opacity(0.1))
             } else {
                 Circle()
-                    .fill(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .fill(LinearGradient.bg)
             }
 
             Image(systemName: icon)
@@ -218,4 +216,9 @@ struct GradientCircleButton: View {
         }
         .frame(width: 44, height: 44)
     }
+}
+
+
+extension LinearGradient{
+  static let bg = LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
 }
