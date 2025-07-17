@@ -104,8 +104,8 @@ struct ActivityCardView: View {
                         }
                     }
                 }
-                .background(Color(.systemGray6))
-                .cornerRadius(16)
+                .padding()
+                .glassEffect(in: .rect(cornerRadius: 16))
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }

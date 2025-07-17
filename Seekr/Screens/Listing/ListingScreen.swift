@@ -54,7 +54,7 @@ struct ListingView: View {
                             .font(.headline)
                             .foregroundStyle(.blue, .purple)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        
+
                         ForEach(itinerary.activities ?? []) { activity in
                             ActivityCardView(activity: activity)
                         }

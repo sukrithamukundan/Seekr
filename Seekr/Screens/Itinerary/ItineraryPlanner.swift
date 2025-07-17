@@ -18,7 +18,7 @@ final class ItineraryPlanner {
     private(set) var isLoading = false
 
     var error: Error?
-    let landmark: Landmark
+    var landmark: Landmark
 
     init(landmark: Landmark) {
         self.landmark = landmark

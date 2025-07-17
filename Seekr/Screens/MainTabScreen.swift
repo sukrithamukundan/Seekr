@@ -22,11 +22,10 @@ struct MainTabScreen: View {
             TabView {
                 LandingScreen()
                     .tabItem { Label("Explore", systemImage: "house") }
-
-                Text("Saved/Favorites")
-                    .tabItem { Label("Saved", systemImage: "bookmark") }
-               TravelProfileView()
-                .tabItem { Label("You", systemImage: "person.circle") }
+                Text("Itinerary Generator")
+                    .tabItem { Label("Itinerary", systemImage: "sparkles") }
+                TravelProfileView()
+                    .tabItem { Label("You", systemImage: "person.circle") }
             }
             .tabBarMinimizeBehavior(.onScrollDown)
             .tabViewBottomAccessory {
@@ -41,7 +40,7 @@ struct MainTabScreen: View {
             BottomSheetView(sheetDetent: $sheetDetent)
                 .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
                 .presentationBackgroundInteraction(.enabled)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // .frame(maxWidth: .infinity, maxHeight: .infinity)
 //                .onGeometryChange(for: CGFloat.self) {
 //                    max(min($0.size.height, 400 + safeAreaBottomInset), 0)
 //                } action: { oldValue, newValue in
@@ -82,10 +81,8 @@ struct BottomSheetView: View {
     @State var planner: ItineraryPlanner?
     @StateObject private var locationManager = LocationManager()
     var body: some View {
-        ScrollView(.vertical) {
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            NavigationStack {
+        NavigationStack {
+            ScrollView(.vertical) {
                 VStack {
                     NeuralSearchView(query: $locationManager.naturalLanguageQuery)
                     if let landmark = locationManager.userLandmark {
@@ -94,7 +91,6 @@ struct BottomSheetView: View {
                 }
             }
         }
-
         .task {
             if let coordinate = locationManager.location?.coordinate {
                 await locationManager.getLocationName(from: coordinate)
@@ -195,6 +191,7 @@ struct NeuralSearchView: View {
     }
 
     func requestItinerary() async throws {
+        planner?.landmark.naturalLanguageQuery = query
         requestedItinerary = true
         do {
             try await planner?.suggestItinerary()
@@ -226,7 +223,6 @@ struct GradientCircleButton: View {
     }
 }
 
-
-extension LinearGradient{
-  static let bg = LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+extension LinearGradient {
+    static let bg = LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
 }

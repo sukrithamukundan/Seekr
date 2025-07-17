@@ -5,7 +5,7 @@
 //  Created by Sukritha K K on 16/07/25.
 //
 
-import Combine
+internal import Combine
 import CoreLocation
 import Foundation
 
