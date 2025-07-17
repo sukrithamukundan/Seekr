@@ -24,12 +24,12 @@ struct ItineraryView: View {
                         .fontWeight(.bold)
                 }
 
-//                if let description = itinerary.description {
-//                    Text(description)
-//                        .contentTransition(.opacity)
-//                        .font(.subheadline)
-//                        .foregroundStyle(.secondary)
-//                }
+                if let description = itinerary.subtitle {
+                    Text(description)
+                        .contentTransition(.opacity)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
             if let rationale = itinerary.rationale {
                 HStack(alignment: .top) {
@@ -42,9 +42,7 @@ struct ItineraryView: View {
 
             if let days = itinerary.activities {
                 ForEach(days) { plan in
-                    if let title = plan.title {
-                        Text(title)
-                    }
+                    ActivityCardView(activity: plan)
                 }
             }
         }

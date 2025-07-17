@@ -28,7 +28,6 @@ public struct LandmarkTripView: View {
                     ItineraryPlanningView(landmark: landmark, planner: planner)
                 }
             }
-            .scrollDisabled(!requestedItinerary)
         }
     }
 }

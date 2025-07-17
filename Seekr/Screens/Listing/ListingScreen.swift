@@ -32,7 +32,12 @@ struct ListingScreen: View {
             )
         default:
             ScrollView {
-                ProgressView()
+                Image(systemName: "sparkles")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .foregroundStyle(Color.blue, Color.purple)
+                    .symbolEffect(.breathe, isActive: true)
+                Text("Generating...")
             }
         }
     }

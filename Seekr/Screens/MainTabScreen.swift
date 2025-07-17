@@ -22,7 +22,7 @@ struct MainTabScreen: View {
             TabView {
                 LandingScreen()
                     .tabItem { Label("Explore", systemImage: "house") }
-                Text("Itinerary Generator")
+                ItineraryScreen()
                     .tabItem { Label("Itinerary", systemImage: "sparkles") }
                 TravelProfileView()
                     .tabItem { Label("You", systemImage: "person.circle") }
@@ -174,9 +174,10 @@ struct NeuralSearchView: View {
                         try await requestItinerary()
                     }
                 }) {
-                    Label("Search", systemImage: "sparkles")
+                    Label(planner?.isLoading == true ? "Generating..." : "Search", systemImage: "sparkles")
                         .fontWeight(.semibold)
-                        .frame(width: 100, height: 44)
+                        .frame(height: 44)
+                        .padding(.horizontal)
                         .background(
                             LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
                         )
