@@ -92,23 +92,30 @@ struct ActivityDetailView: View {
                             } label: {
                                 Label("Website", systemImage: "safari")
                             }
+                            .padding()
+                            .glassEffect()
                         }
 
                         if let phone = activity.phoneNumber {
                             Link(destination: URL(string: "tel:\(phone)")!) {
                                 Label("Call", systemImage: "phone.fill")
                             }
+                            .padding()
+                            .glassEffect()
                         }
                         if let url = activity.directionsURL, !url.isEmpty {
                             Link(destination: URL(string: url)!) {
                                 Label("Directions", systemImage: "map")
                             }
+                            .padding()
+                            .glassEffect()
                         }
                     }
                     .font(.callout)
                     .padding(.top, 8)
                 }
                 .padding(.horizontal)
+                .padding(.bottom, 24)
             }
             .padding(.top)
             .task {
@@ -138,7 +145,8 @@ struct ActivityLocationMap: View {
         }
         .mapStyle(.hybrid)
         .frame(height: 280)
-        .cornerRadius(20)
+        .clipShape(.rect(cornerRadius: 20))
+        .glassEffect(in:.rect(cornerRadius: 20))
         .padding(.horizontal)
         .onAppear {
             viewModel.fetchCoordinates(for: viewModel.locationName, title: title)
@@ -156,7 +164,7 @@ class LocationViewModel: ObservableObject {
     init(locationName: String, title: String) {
         self.locationName = locationName
         camera = .userLocation(fallback: .automatic)
-        fetchCoordinates(for: locationName,title: title)
+        fetchCoordinates(for: locationName, title: title)
     }
 
     func fetchCoordinates(for locationName: String, title: String) {
