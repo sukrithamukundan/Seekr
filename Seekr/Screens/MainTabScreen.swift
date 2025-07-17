@@ -6,6 +6,7 @@
 //
 
 import FoundationModels
+import MapKit
 import SwiftUI
 
 struct MainTabScreen: View {
@@ -22,8 +23,9 @@ struct MainTabScreen: View {
                 LandingScreen()
                     .tabItem { Label("Explore", systemImage: "house") }
 
-                Text("Saved/Favorites")
-                    .tabItem { Label("Saved", systemImage: "bookmark") }
+                Text("Itinerary Generator")
+                    .tabItem { Label("Itinerary", systemImage: "sparkles") }
+
                 TravelProfileView()
                     .tabItem { Label("You", systemImage: "person.circle") }
             }
@@ -40,26 +42,6 @@ struct MainTabScreen: View {
             BottomSheetView(sheetDetent: $sheetDetent)
                 .presentationDetents([.height(1), .height(350), .large], selection: $sheetDetent)
                 .presentationBackgroundInteraction(.enabled)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-//                .onGeometryChange(for: CGFloat.self) {
-//                    max(min($0.size.height, 400 + safeAreaBottomInset), 0)
-//                } action: { oldValue, newValue in
-//                    if sheetDetent == .height(0) {
-//                        showBottomSheet = false
-//                    }
-//
-//                    /// Limiting the offset to 300, so that opacity effect will be visible
-//                    sheetHeight = min(newValue, 350 + safeAreaBottomInset)
-//
-//                    /// Calulating Opacity
-//                    let progress = max(min((newValue - (350 + safeAreaBottomInset)) / 50, 1), 0)
-//                    toolbarOpacity = 1 - progress
-//
-//                    /// Calculating Animation Duration
-//                    let diff = abs(newValue - oldValue)
-//                    let duration = max(min(diff / 100, maxAnimationDuration), 0)
-//                    animationDuration = duration
-//                }
                 .ignoresSafeArea()
                 .interactiveDismissDisabled()
         }
@@ -77,23 +59,36 @@ struct MainTabScreen: View {
 struct BottomSheetView: View {
     @Binding var sheetDetent: PresentationDetent
     /// Bottom Sheet Properties
-    @State private var searchText: String = ""
     @FocusState var isFocused: Bool
     @State var planner: ItineraryPlanner?
+    @StateObject private var locationManager = LocationManager()
     var body: some View {
-        ScrollView(.vertical) {
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            VStack {
-                NeuralSearchView()
-                TripPlanningView(landmark: ModelData.shared.featuredLandmark ?? ModelData.landmarks.first!)
-                Spacer()
+        NavigationStack {
+            ScrollView(.vertical) {
+                VStack {
+                    NeuralSearchView(query: $locationManager.naturalLanguageQuery)
+                    if locationManager.naturalLanguageQuery.isEmpty {
+                        ScheduleAssistantCard()
+                        HealthInsightsCard()
+                    }
+
+                    if let landmark = locationManager.userLandmark {
+                        ListingScreen(landmark: landmark)
+                    }
+                }
             }
         }
-
         .task {
-            planner = ItineraryPlanner(landmark: ModelData.shared.featuredLandmark ?? ModelData.landmarks.first!)
-            planner?.prewarm()
+            if let coordinate = locationManager.location?.coordinate {
+                await locationManager.getLocationName(from: coordinate)
+                if let landmark = locationManager.userLandmark {
+                    planner = ItineraryPlanner(landmark: landmark)
+                    planner?.prewarm()
+                    Task { @MainActor in
+                        try await requestItinerary()
+                    }
+                }
+            }
         }
         .environment(planner)
         /// Animating Focus Changes
@@ -101,6 +96,14 @@ struct BottomSheetView: View {
         /// Updating Sheet size when textfield is active
         .onChange(of: isFocused) { _, newValue in
             sheetDetent = newValue ? .large : .height(350)
+        }
+    }
+
+    func requestItinerary() async throws {
+        do {
+            try await planner?.suggestItinerary()
+        } catch {
+            planner?.error = error
         }
     }
 }
@@ -112,7 +115,8 @@ struct SearchBarView: View {
                 .foregroundColor(.gray)
 
             Text("Find a quiet café with good Wi-Fi.")
-                .foregroundColor(.primary)
+                .font(.caption)
+                .foregroundColor(.secondary)
             Spacer(minLength: 0)
             Button {
                 // Handle mic action
@@ -132,61 +136,50 @@ struct SearchBarView: View {
 }
 
 struct NeuralSearchView: View {
-    @State private var query: String = ""
+    @Binding var query: String
     @State private var requestedItinerary: Bool = false
     @Environment(ItineraryPlanner.self) var planner: ItineraryPlanner?
 
     var body: some View {
-        ZStack {
-            VStack(alignment: .leading, spacing: 16) {
-                ZStack(alignment: .topLeading) {
-                    if query.isEmpty {
-                        Text("Tell me what you're looking for…\n'Find a quiet café with outdoor seating and good WiFi near MG Road'")
-                            .foregroundColor(.white.opacity(0.4))
-                            .padding(.horizontal, 12)
-                            .padding(.top, 12)
-                    }
-
-                    TextEditor(text: $query)
-                        .padding(12)
-                        .foregroundColor(.white)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(16)
-                        .frame(height: 100)
-                        .scrollContentBackground(.hidden)
+        VStack(alignment: .leading, spacing: 16) {
+            TextField("Tell me what you're looking for…\n'Find a quiet café with outdoor seating and good WiFi near MG Road'", text: $query, axis: .vertical)
+                .lineLimit(2 ... 6)
+                .padding(12)
+                .foregroundColor(.white)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(16)
+//                    .scrollContentBackground(.hidden)
+            HStack {
+                HStack(spacing: 16) {
+                    GradientCircleButton(icon: "mic.fill")
+                    GradientCircleButton(icon: "camera.fill", plain: true)
                 }
 
-                HStack {
-                    HStack(spacing: 16) {
-                        GradientCircleButton(icon: "mic.fill")
-                        GradientCircleButton(icon: "camera.fill", plain: true)
-                    }
+                Spacer()
 
-                    Spacer()
-
-                    Button(action: {
-                        Task { @MainActor in
-                            try await requestItinerary()
-                        }
-                    }) {
-                        Label("Search", systemImage: "sparkles")
-                            .fontWeight(.semibold)
-                            .frame(width: 100, height: 44)
-                            .background(
-                                LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                Button(action: {
+                    Task { @MainActor in
+                        try await requestItinerary()
                     }
+                }) {
+                    Label("Search", systemImage: "sparkles")
+                        .fontWeight(.semibold)
+                        .frame(width: 100, height: 44)
+                        .background(
+                            LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
                 }
             }
-            .padding()
         }
+        .padding()
         .frame(maxWidth: .infinity)
         .padding()
     }
 
     func requestItinerary() async throws {
+        planner?.landmark.naturalLanguageQuery = query
         requestedItinerary = true
         do {
             try await planner?.suggestItinerary()

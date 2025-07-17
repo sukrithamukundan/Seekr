@@ -5,19 +5,20 @@
 //  Created by Sukritha K K on 16/07/25.
 //
 
+import Foundation
 import FoundationModels
 import Observation
-import Foundation
 
 @Observable
 @MainActor
 final class ItineraryPlanner {
-    private(set) var itinerary: DayPlan.PartiallyGenerated?
+    private(set) var itinerary: Suggestions.PartiallyGenerated?
     private(set) var pointOfInterestTool: FindPointsOfInterestTool
     private var session: LanguageModelSession
+    private(set) var isLoading = false
 
     var error: Error?
-    let landmark: Landmark
+    var landmark: Landmark
 
     init(landmark: Landmark) {
         self.landmark = landmark
@@ -56,27 +57,45 @@ final class ItineraryPlanner {
                 FindPointsOfInterestTool.categories
 
                 """
-                Here is a description of \(landmark.name) for your reference \
-                when considering what activities to generate:
+                The user is looking for places that match their preferences, such as vibe (e.g., quiet, romantic, solo), type (e.g., café, park, museum), or context (e.g., open now, outdoor seating), near a specific location. Your task is to interpret the user’s intent using their natural language query, and return a friendly, concise recommendation based only on data available in MapKit.
+
+                Example query: “Find me a quiet coffee shop near Indiranagar”
+
+                From this query, extract:
+                - Type: coffee shop (Category: .cafe)
+                - Vibe: quiet
+                - Location: Indiranagar
+
+                Use this understanding to suggest relevant places tagged appropriately and close to the location, prioritizing those matching the vibe and operational status.
+
+                Avoid repeating the query back. Respond like a knowledgeable local, keeping the tone inviting and helpful. If needed, ask the user to refine their query.
+
                 """
-                landmark.description
+                landmark.naturalLanguageQuery
             }
         )
         self.pointOfInterestTool = pointOfInterestTool
     }
 
     func suggestItinerary() async throws {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
         let stream = session.streamResponse(
-            generating: DayPlan.self,
+            generating: Suggestions.self,
             options: GenerationOptions(sampling: .greedy),
             includeSchemaInPrompt: false
         ) {
-            "Find interesting places nearby \(landmark.name)."
+            " The user is interested in: \(landmark.naturalLanguageQuery ?? "")"
 
-            "Give it a fun title and description."
+            " Create a personalized itinerary around \(landmark.name), considering the user's preferences."
+
+            " Focus on interesting places nearby that match their vibe, such as quiet, romantic, outdoor, family-friendly, etc."
+
+            "Give the itinerary a creative title and an engaging description."
 
             "Here is an example, but don't copy it:"
-            DayPlan.exampleDayInKawaguchiko
+            Suggestions.sampleSuggestions
         }
 
         for try await partialResponse in stream {
@@ -103,54 +122,75 @@ extension FindPointsOfInterestTool {
     }
 }
 
-extension DayPlan {
-    static let exampleDayInKawaguchiko = DayPlan(
-        title: "Sushi and Shopping Near Kawaguchiko",
-        subtitle: "Spend your final day enjoying sushi and souvenir shopping.",
-        destination: "Kawaguchiko Lake",
-        rationale: "This day plan highlights the best local sushi and shopping options to provide a memorable final day experience based on user interest in food and unique souvenirs.",
+extension Suggestions {
+    static  let sampleSuggestions = Suggestions(
+        title: "Art & Aromas in Indiranagar",
+        subtitle: "A relaxed afternoon of culture and caffeine",
+        destination: "Indiranagar, Bangalore",
+        rationale: "This plan is perfect for a quiet yet inspiring afternoon. It includes a blend of cozy cafes and thought-provoking local art spaces, just as the user requested. All places are within a short distance and have high accessibility.",
         activities: [
             Activity(
                 type: .foodAndDining,
-                title: "The Restaurant serving Sushi",
-                description: "Visit an authentic sushi restaurant for lunch.",
-                image: nil,
-                location: "",
-                distance: 0,
-                amenities: [],
-                isOpenNow: false,
-                rating: nil,
-                directionsURL: nil,
-                website: nil,
-                phoneNumber: nil
-            ),
-            Activity(
-                type: .shopping,
-                title: "The Plaza",
-                description: "Enjoy souvenir shopping at various shops.",
-                image: nil,
-                location: "",
-                distance: 0,
-                amenities: [],
-                isOpenNow: false,
-                rating: nil,
-                directionsURL: nil,
-                website: nil,
-                phoneNumber: nil
+                title: "Third Wave Coffee Roasters",
+                description: "A popular artisanal café known for its calm vibe, pour-over brews, and free Wi-Fi — great for solo work or relaxed meetups.",
+                image: "third_wave_coffee.jpg",
+                location: "12th Main, Indiranagar",
+                distance: 500,
+                amenities: ["Wi-Fi", "Outdoor Seating", "Pet-Friendly"],
+                isOpenNow: true,
+                rating: 4.6,
+                reviews: 120.0,
+                directionsURL: "maps://?daddr=Third+Wave+Coffee+Roasters",
+                website: "https://thirdwavecoffeeroasters.com",
+                phoneNumber: "+91 98765 43210",
+                walkTime: 6,
+                noiseLevel: "Low",
+                noiseColor: "#8BC34A",
+                rationale: "Recommended because it fits the user's requested vibe and is close to Indiranagar.",
+                latitude: nil,
+                longitude: nil
             ),
             Activity(
                 type: .sightseeing,
-                title: "The Beautiful Cherry Blossom Park",
-                description: "Admire the beautiful cherry blossom trees in the park.",
-                image: nil,
-                location: "",
-                distance: 0,
-                amenities: [],
+                title: "Rangoli Art Gallery",
+                description: "A small contemporary art space showcasing works by local artists, with rotating exhibits and a peaceful ambiance.",
+                image: "rangoli_art_gallery.jpg",
+                location: "CMH Road, Indiranagar",
+                distance: 850,
+                amenities: ["Wheelchair Access", "Restrooms"],
+                isOpenNow: true,
+                rating: 4.3,
+                reviews: 85.0,
+                directionsURL: "maps://?daddr=Rangoli+Art+Gallery",
+                website: "https://bangaloreartcircle.in/rangoli",
+                phoneNumber: "+91 99888 11223",
+                walkTime: 10,
+                noiseLevel: "Moderate",
+                noiseColor: "#FFC107",
+                rationale: "Recommended because it fits the user's requested vibe and is close to Indiranagar.",
+                latitude: nil,
+                longitude: nil
+            ),
+            Activity(
+                type: .foodAndDining,
+                title: "Lahe Lahe Terrace Bistro",
+                description: "An artsy rooftop space offering fusion food and chai. Often hosts poetry slams, music sessions, and a calm sunset view.",
+                image: "lahe_lahe.jpg",
+                location: "100 Feet Road, Indiranagar",
+                distance: 1200,
+                amenities: ["Live Events", "Outdoor Seating", "Wi-Fi"],
                 isOpenNow: false,
-                rating: nil,
-                directionsURL: nil,
-                website: nil,
-                phoneNumber: nil
+                rating: 4.5,
+                reviews: 95.0,
+                directionsURL: "maps://?daddr=Lahe+Lahe+Bistro",
+                website: "https://lahelahe.com",
+                phoneNumber: "+91 91234 56789",
+                walkTime: 15,
+                noiseLevel: "High",
+                noiseColor: "#E57373",
+                rationale: "Recommended because it fits the user's requested vibe and is close to Indiranagar.",
+                latitude: nil,
+                longitude: nil
             ),
         ]
     )

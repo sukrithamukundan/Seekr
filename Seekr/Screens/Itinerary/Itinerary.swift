@@ -5,6 +5,7 @@
 //  Created by Sukritha K K on 16/07/25.
 //
 
+import CoreLocation
 import Foundation
 import FoundationModels
 //
@@ -24,7 +25,7 @@ import FoundationModels
 // }
 
 @Generable
-struct DayPlan: Equatable {
+struct Suggestions: Equatable {
     @Guide(description: "A unique and exciting title for this day plan.")
     let title: String
     let subtitle: String
@@ -38,7 +39,6 @@ struct DayPlan: Equatable {
 
 @Generable
 struct Activity: Equatable {
-
     @Guide(description: "The high-level classification of this activity, such as sightseeing, food and dining, or shopping.")
     let type: Kind
 
@@ -48,7 +48,7 @@ struct Activity: Equatable {
     @Guide(description: "A brief, informative summary of the activity — ideal for use in detail pages or list previews.")
     let description: String
 
-    @Guide(description: "A URL or asset name pointing to an image that visually represents the activity or location.")
+    @Guide(description: "A URL string pointing to an image that visually represents the activity or location.")
     let image: String?
 
     @Guide(description: "The human-readable address or neighborhood of the activity’s location.")
@@ -66,6 +66,9 @@ struct Activity: Equatable {
     @Guide(description: "A numeric rating of the activity (typically between 0 and 5), based on reviews or user feedback.")
     let rating: Double?
 
+    @Guide(description: "The number of reviews that have contributed to the rating.")
+    let reviews: Double
+
     @Guide(description: "A deep link or map URL that provides directions to the activity from the user’s location.")
     let directionsURL: String?
 
@@ -74,8 +77,25 @@ struct Activity: Equatable {
 
     @Guide(description: "The contact phone number associated with the activity or location.")
     let phoneNumber: String?
-}
 
+    @Guide(description: "The estimated walking time from the user's location to the activity.")
+    let walkTime: Int?
+
+    @Guide(description: "The estimated noise level at the activity.")
+    let noiseLevel: String?
+
+    @Guide(description: "The color code representing the estimated noise level at the activity.")
+    let noiseColor: String?
+
+    @Guide(description: "A rationale for the activity being suggested.")
+    let rationale: String
+
+    @Guide(description: "The latitude of the location of activity")
+    let latitude: Double?
+
+    @Guide(description: "The longitude of the location activity")
+    let longitude: Double?
+}
 
 @Generable
 enum Kind {
@@ -94,9 +114,9 @@ enum Kind {
     case hiddenGems // AI-tagged quirky/offbeat places
 }
 
-//import FoundationModels
+// import FoundationModels
 //
-//extension URL: ConvertibleFromGeneratedContent, ConvertibleToGeneratedContent, Generable {
+// extension URL: ConvertibleFromGeneratedContent, ConvertibleToGeneratedContent, Generable {
 //    public init(fromGeneratedContent value: any GeneratedContentValue) throws {
 //        let urlString = try String(fromGeneratedContent: value)
 //        guard let url = URL(string: urlString) else {
@@ -108,4 +128,4 @@ enum Kind {
 //    public func toGeneratedContentValue() throws -> GeneratedContentValue {
 //        return self.absoluteString
 //    }
-//}
+// }

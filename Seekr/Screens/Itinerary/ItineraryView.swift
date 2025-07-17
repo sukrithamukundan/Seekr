@@ -12,7 +12,7 @@ import WeatherKit
 
 struct ItineraryView: View {
     let landmark: Landmark
-    let itinerary: DayPlan.PartiallyGenerated
+    let itinerary: Suggestions.PartiallyGenerated
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -49,6 +49,5 @@ struct ItineraryView: View {
             }
         }
         .animation(.easeOut, value: itinerary)
-        .itineraryStyle()
     }
 }

@@ -24,9 +24,10 @@ struct ScheduleAssistantCard: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(Color.blue)
                         .textCase(.uppercase)
-                    Text("Your day has 2 hours free before your next meeting")
-                        .font(.body)
+                    Text("Your day has 2 hrs free before your next meeting")
+                        .font(.callout)
                         .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity,alignment: .leading)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -53,7 +54,6 @@ struct ScheduleAssistantCard: View {
         }
         .padding(16)
         .glassEffect(in: .rect(cornerSize: CGSize(width: 18, height: 18)))
-        .padding()
+        .padding(.horizontal)
     }
 }
-

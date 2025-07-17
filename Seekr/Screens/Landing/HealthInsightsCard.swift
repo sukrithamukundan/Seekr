@@ -49,7 +49,7 @@ struct HealthInsightsCard: View {
         }
         .padding(16)
         .glassEffect(in: .rect(cornerSize: CGSize(width: 18, height: 18)))
-        .padding()
+        .padding(.horizontal)
     }
 }
 
