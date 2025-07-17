@@ -8,6 +8,7 @@
 internal import Combine
 import CoreLocation
 import Foundation
+import MapKit
 
 @MainActor
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
@@ -40,17 +41,15 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     func getLocationName(from coordinate: CLLocationCoordinate2D) async {
-        let geocoder = CLGeocoder()
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-
+        let geocoder =  MKReverseGeocodingRequest.init(location: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
         do {
-            let placemarks = try await geocoder.reverseGeocodeLocation(location)
-            if let placemark = placemarks.first {
+            let placemarks = try await geocoder?.mapItems
+            if let placemark = placemarks?.first {
                 // You can customize what parts to include
                 userLandmark = Landmark()
                 userLandmark?.name = placemark.name ?? ""
-                userLandmark?.description = placemark.locality ?? ""
-                userLandmark?.continent = placemark.country ?? ""
+//                userLandmark?.description = placemark.locality ?? ""
+//                userLandmark?.continent = placemark.country ?? ""
                 userLandmark?.latitude = coordinate.latitude
                 userLandmark?.longitude = coordinate.longitude
                 userLandmark?.naturalLanguageQuery = naturalLanguageQuery

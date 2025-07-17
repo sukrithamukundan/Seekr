@@ -5,9 +5,9 @@
 //  Created by Sukritha K K on 17/07/25.
 //
 
-import SwiftUI
-import MapKit
 import CoreLocation
+import MapKit
+import SwiftUI
 import UIKit
 
 struct ActivityDetailView: View {
@@ -35,7 +35,7 @@ struct ActivityDetailView: View {
                     }
 
                 } else if let location = activity.location, !location.isEmpty {
-                    ActivityLocationMap(location: location)
+                    ActivityLocationMap(locationName: location, title: activity.title)
                 }
                 VStack(alignment: .leading, spacing: 12) {
                     if let title = activity.title {
@@ -96,7 +96,7 @@ struct ActivityDetailView: View {
                                 Label("Call", systemImage: "phone.fill")
                             }
                         }
-                        if let url = activity.directionsURL {
+                        if let url = activity.directionsURL, !url.isEmpty {
                             Link(destination: URL(string: url)!) {
                                 Label("Directions", systemImage: "map")
                             }
@@ -120,39 +120,68 @@ struct ActivityDetailView: View {
 }
 
 struct ActivityLocationMap: View {
-    let location: String?
-    @State private var region: MKCoordinateRegion = .applePark
-    @State private var coordinate: CLLocationCoordinate2D?
-    
+    @StateObject var viewModel: LocationViewModel
+    let title: String
+    init(locationName: String, title: String?) {
+        _viewModel = StateObject(wrappedValue: LocationViewModel(locationName: locationName, title: title ?? ""))
+        self.title = title ?? ""
+    }
+
     var body: some View {
-        Map(coordinateRegion: $region, annotationItems: coordinate.map { [ActivityAnnotation(coordinate: $0)] } ?? []) { item in
-            MapMarker(coordinate: item.coordinate, tint: .blue)
+        Map(position: $viewModel.camera) {
+            if let loc = viewModel.annotation {
+                Marker(item: loc)
+            }
         }
+        .mapStyle(.hybrid)
         .frame(height: 280)
         .cornerRadius(20)
         .padding(.horizontal)
-        .task {
-            await lookupCoordinate()
+        .onAppear {
+            viewModel.fetchCoordinates(for: viewModel.locationName, title: title)
         }
-    }
-    
-    func lookupCoordinate() async {
-        guard let location = location, !location.isEmpty else { return }
-        do {
-            let placemarks = try await CLGeocoder().geocodeAddressString(location)
-            if let placemark = placemarks.first, let coord = placemark.location?.coordinate {
-                await MainActor.run {
-                    region = MKCoordinateRegion(center: coord, latitudinalMeters: 1000, longitudinalMeters: 1000)
-                    coordinate = coord
-                }
-            }
-        } catch {
-            // Leave fallback region
-        }
-    }
-    struct ActivityAnnotation: Identifiable {
-        let id = UUID()
-        let coordinate: CLLocationCoordinate2D
     }
 }
 
+internal import Combine
+
+class LocationViewModel: ObservableObject {
+    @Published var camera: MapCameraPosition
+    @Published var locationName: String
+    @Published var annotation: MKMapItem?
+
+    init(locationName: String, title: String) {
+        self.locationName = locationName
+        camera = .userLocation(fallback: .automatic)
+        fetchCoordinates(for: locationName,title: title)
+    }
+
+    func fetchCoordinates(for locationName: String, title: String) {
+        // Use MKLocalSearch to geocode the location
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = locationName
+
+        let search = MKLocalSearch(request: request)
+
+        search.start { [weak self] response, error in
+            if let error = error {
+                print("Failed to geocode: \(error.localizedDescription)")
+                return
+            }
+
+            // Get the first result
+            guard let mapItem = response?.mapItems.first else {
+                print("No matching results found.")
+                return
+            }
+
+            // Get the coordinates from the map item
+
+            self?.camera = MapCameraPosition.item(mapItem)
+
+            // Set the annotation to the fetched coordinates
+            self?.annotation = mapItem
+            self?.annotation?.name = title
+        }
+    }
+}

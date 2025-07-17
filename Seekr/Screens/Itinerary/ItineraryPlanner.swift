@@ -79,10 +79,10 @@ final class ItineraryPlanner {
     }
 
     func suggestItinerary() async throws {
-        showLoading = true
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
+        itinerary = nil
         let stream = session.streamResponse(
             generating: Suggestions.self,
             options: GenerationOptions(sampling: .greedy),
@@ -101,7 +101,6 @@ final class ItineraryPlanner {
         }
 
         for try await partialResponse in stream {
-            showLoading = false
             itinerary = partialResponse
         }
         print(itinerary)
@@ -129,7 +128,7 @@ extension Suggestions {
     static let sampleSuggestions = Suggestions(
         title: "Art & Aromas in Indiranagar",
         subtitle: "A relaxed afternoon of culture and caffeine",
-        destination: "Indiranagar, Bangalore",
+        destination: "Indiranagar",
         rationale: "This plan is perfect for a quiet yet inspiring afternoon. It includes a blend of cozy cafes and thought-provoking local art spaces, just as the user requested. All places are within a short distance and have high accessibility.",
         activities: [
             Activity(

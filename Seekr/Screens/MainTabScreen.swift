@@ -76,6 +76,7 @@ struct BottomSheetView: View {
                     }
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
         }
         .task {
             if let coordinate = locationManager.location?.coordinate {
@@ -138,6 +139,7 @@ struct NeuralSearchView: View {
     @Binding var query: String
     @State private var requestedItinerary: Bool = false
     @Environment(ItineraryPlanner.self) var planner: ItineraryPlanner?
+    @FocusState var isFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -147,6 +149,7 @@ struct NeuralSearchView: View {
                 .foregroundColor(.white)
                 .background(Color.white.opacity(0.05))
                 .cornerRadius(16)
+                .focused($isFocused)
 //                    .scrollContentBackground(.hidden)
             HStack {
                 HStack(spacing: 16) {
@@ -157,6 +160,7 @@ struct NeuralSearchView: View {
                 Spacer()
 
                 Button(action: {
+                    isFocused = false
                     Task { @MainActor in
                         try await requestItinerary()
                     }
