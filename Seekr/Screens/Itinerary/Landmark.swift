@@ -20,6 +20,7 @@ struct Landmark: Hashable, Codable, Identifiable {
     var longitude: Double
     var span: Double
     var placeID: String?
+    var naturalLanguageQuery: String?
     
     var backgroundImageName: String {
         return "\(id)"
@@ -40,5 +41,17 @@ struct Landmark: Hashable, Codable, Identifiable {
             center: locationCoordinate,
             span: .init(latitudeDelta: span, longitudeDelta: span)
         )
+    }
+    
+    init() {
+        id = 0
+        name = ""
+        continent = ""
+        description = ""
+        shortDescription = ""
+        latitude = 0
+        longitude = 0
+        span = 0
+        placeID = nil
     }
 }

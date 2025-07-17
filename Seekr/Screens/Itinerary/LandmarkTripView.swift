@@ -22,7 +22,8 @@ public struct LandmarkTripView: View {
         } else {
             ScrollView {
                 if let itinerary = planner?.itinerary {
-                    ItineraryView(landmark: landmark, itinerary: itinerary).padding()
+                    ItineraryView(landmark: landmark, itinerary: itinerary)
+                        .padding()
                 } else if let planner {
                     ItineraryPlanningView(landmark: landmark, planner: planner)
                 }
