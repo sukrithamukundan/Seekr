@@ -6,9 +6,10 @@
 //
 
 import SwiftUI
+import WebKit
 struct ActivityDetailView: View {
     let activity: Activity.PartiallyGenerated
-
+//    @StateObject private var page = WebPage()
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -79,10 +80,13 @@ struct ActivityDetailView: View {
 
                     HStack {
                         if let website = activity.website {
-                            Link(destination: URL(string: website)!) {
+                            NavigationLink {
+                                WebView(url: URL(string: website)!)
+                            } label: {
                                 Label("Website", systemImage: "safari")
                             }
                         }
+
                         if let phone = activity.phoneNumber {
                             Link(destination: URL(string: "tel:\(phone)")!) {
                                 Label("Call", systemImage: "phone.fill")
